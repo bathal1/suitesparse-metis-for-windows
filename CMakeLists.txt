@@ -318,7 +318,7 @@ install(EXPORT SuiteSparseTargets
 ## write config-version file
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-	"${CMAKE_BINARY_DIR}/suitesparse/suitesparse-config-version.cmake"
+	"${CMAKE_CURRENT_BINARY_DIR}/suitesparse/suitesparse-config-version.cmake"
 	VERSION ${SuiteSparse_VERSION}
 	COMPATIBILITY SameMajorVersion
 )
