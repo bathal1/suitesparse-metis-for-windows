@@ -82,7 +82,7 @@ if(MSVC)
 endif(MSVC)
 
 ## check if we can build metis
-set(BUILD_METIS_DEFAULT ON)
+set(BUILD_METIS_DEFAULT OFF)
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/SuiteSparse/metis-5.1.0/CMakeLists.txt")
 	set(BUILD_METIS_DEFAULT OFF)
 endif()
@@ -100,7 +100,7 @@ if(BUILD_METIS)
 	if(EXISTS "${METIS_DIR}/libmetis/CMakeLists.txt")
 		file(READ "${METIS_DIR}/libmetis/CMakeLists.txt" contentFile)
 		string(REGEX MATCH "EXPORT 	SuiteSparseTargets" alreadyModified ${contentFile}) ## use a string pattern to check if we have to do the modif
-		if(NOT alreadyModified)
+		if(NOT alreadyModified AND SUITESPARSE_INSTALL)
 			file(APPEND "${METIS_DIR}/libmetis/CMakeLists.txt"
 			"
 				set_target_properties(metis PROPERTIES PUBLIC_HEADER \"../include/metis.h\")
@@ -156,13 +156,15 @@ macro(install_suitesparse_project targetName headersList)
 	)
 
 	set_target_properties(${targetName} PROPERTIES PUBLIC_HEADER "${headersList}")
-	install(TARGETS	${targetName}
-			EXPORT 	SuiteSparseTargets
-			RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-			LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-			ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-			PUBLIC_HEADER DESTINATION include/suitesparse
-	)
+        if (SUITESPARSE_INSTALL)
+		install(TARGETS	${targetName}
+				EXPORT 	SuiteSparseTargets
+				RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+					LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+				ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+				PUBLIC_HEADER DESTINATION include/suitesparse
+		)
+	endif()
 endmacro()
 
 ## declare_suitesparse_library(targetName srcsList headersList)
@@ -297,24 +299,26 @@ get_SuiteSparse_Version()
 
 set(ConfigPackageLocation ${CMAKE_INSTALL_LIBDIR}/cmake/suitesparse-${SuiteSparse_VERSION})
 ## create targets file
-export(EXPORT SuiteSparseTargets
-	FILE "${CMAKE_CURRENT_BINARY_DIR}/suitesparse/suitesparse-targets.cmake"
-	NAMESPACE SuiteSparse::
-)
+#export(EXPORT SuiteSparseTargets
+#	FILE "${CMAKE_CURRENT_BINARY_DIR}/suitesparse/suitesparse-targets.cmake"
+#	NAMESPACE SuiteSparse::
+#)
 ## create config file
 configure_file(cmake/SuiteSparse-config-install.cmake.in
 	"${CMAKE_CURRENT_BINARY_DIR}/suitesparse/suitesparse-config.cmake"
 	@ONLY
 )
 ## do the EXPORT for allowing other project to easily use suitesparse with cmake
-install(EXPORT SuiteSparseTargets
-	FILE
-		SuiteSparse-targets.cmake
-	NAMESPACE
-		SuiteSparse::
-	DESTINATION
-		${ConfigPackageLocation}
-)
+if (SUITESPARSE_INSTALL)
+	install(EXPORT SuiteSparseTargets
+		FILE
+			SuiteSparse-targets.cmake
+		NAMESPACE
+			SuiteSparse::
+		DESTINATION
+			${ConfigPackageLocation}
+	)
+endif()
 ## write config-version file
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
@@ -323,10 +327,12 @@ write_basic_package_version_file(
 	COMPATIBILITY SameMajorVersion
 )
 ## install config and config-version file
-install(
-	FILES
-		"${CMAKE_CURRENT_BINARY_DIR}/suitesparse/suitesparse-config.cmake"
-		"${CMAKE_CURRENT_BINARY_DIR}/suitesparse/suitesparse-config-version.cmake"
-	DESTINATION
-		${ConfigPackageLocation}
-)
+if (SUITESPARSE_INSTALL)
+	install(
+		FILES
+			"${CMAKE_CURRENT_BINARY_DIR}/suitesparse/suitesparse-config.cmake"
+			"${CMAKE_CURRENT_BINARY_DIR}/suitesparse/suitesparse-config-version.cmake"
+		DESTINATION
+			${ConfigPackageLocation}
+	)
+endif()
